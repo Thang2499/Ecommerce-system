@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-const productSchema = new Schema({
+const productSchema = new mongoose.Schema({
     shopId:{
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'shops',
         require:true
     },
     productName: {
@@ -9,7 +10,8 @@ const productSchema = new Schema({
       required: true
     },
     category:{
-        type:String
+        type:String,
+        require:true
     },
     description: String,
     price: {
@@ -18,13 +20,13 @@ const productSchema = new Schema({
     },
     salePrice: Number,
     discount: Number,
-    image: String, 
+    image: [String], 
     imageDetail: [String], 
     stock: {
       type: Number,
       default: 0
     },
-  });
+  },{collection:'products'});
   
  const productModel = mongoose.model('products', productSchema);
  export default productModel;

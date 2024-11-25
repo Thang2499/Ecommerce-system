@@ -35,22 +35,22 @@ const userSchema = new mongoose.Schema({
         {
           productId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Products'
+            ref: 'products'
           }
         }
       ],
-      cart: [
+    cart: [
         {
-          productId: {
+          itemId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Products'
+            ref: 'items'
           },
-          quantity: {
-            type: Number,
-            default: 1
-          },
-          unitPrice: Number,
-          totalPrice: Number
+          // quantity: {
+          //   type: Number,
+          //   default: 1
+          // },
+          // unitPrice: Number,
+          // totalPrice: Number
         }
       ],
 })

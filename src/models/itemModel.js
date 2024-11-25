@@ -9,7 +9,12 @@ const itemSchema = mongoose.Schema({
       orderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'orders',
-        required: true
+        // required: true
+      },
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'users',
+        // required: true
       },
       quantity: {
         type: Number,
@@ -21,7 +26,8 @@ const itemSchema = mongoose.Schema({
       },
       totalPrice: {
         type: Number,
-        required: true
+        // required: true
       }
 })
-export default itemSchema;
+const itemModel = mongoose.model('items', itemSchema);
+export default itemModel;

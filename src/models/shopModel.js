@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const shopSchema = new mongoose.Schema({
     userId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:'users'
+        ref:'users',
+        require:true
     },
     orderId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -32,7 +33,8 @@ const shopSchema = new mongoose.Schema({
         type:String
     },
     createAt:{
-        Date:Date.now()
+        Date:Date.now(),
+        type:String
     }
 })
 

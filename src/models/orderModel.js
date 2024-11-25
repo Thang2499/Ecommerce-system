@@ -6,10 +6,10 @@ const orderSchema = mongoose.Schema({
         ref: 'users',
         required: true
       },
-      orderId:{
+      itemId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'items',
-        required: true
+        // required: true
       },
       date: {
         type: Date,
