@@ -37,34 +37,35 @@ const shopController = {
     },
     getShop: async (req, res) => {
         try {
-            const token = req.cookies.token;
+            const users = req.user
+            // console.log(users)
+            // const token = req.cookies.token;
 
-            if (!token) {
-                return res.status(401).send({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            const shopInfo = await shopModel.findById(decoded.user.shopId);
+            // if (!token) {
+            //     return res.status(401).send({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            const shopInfo = await shopModel.findById(users.shopId);
             res.status(200).send({
                 shopInfo
             })
-
         } catch (err) {
             res.status(400).send({
                 message: err.message
             })
         }
-
     },
     productList: async (req, res) => {
         try {
-            const token = req.cookies.token;
+            // const token = req.cookies.token;
 
-            if (!token) {
-                return res.status(401).send({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            const getListProduct = await productModel.find({ shopId: decoded.user.shopId });
-            console.log(getListProduct)
+            // if (!token) {
+            //     return res.status(401).send({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            const users = req.user
+            const getListProduct = await productModel.find({ shopId: users.shopId });
+            console.log(users)
             if (!getListProduct) {
                 return res.status(400).send({
                     message: 'hiện chưa có sản phẩm nào'
@@ -145,7 +146,8 @@ const shopController = {
             const { id } = req.query;
             const { productName, category, price, imageUrlsToDelete } = req.body;
             const listFile = req.files['files']; 
-            const file = req.file
+            const file = req.file['file']
+            console.log(req);
             const token = req.cookies.token;
             if (!token) {
                 return res.status(401).json({ message: 'Access denied, no token provided' });

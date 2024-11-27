@@ -1,4 +1,4 @@
-import { decodeToken, generateToken } from "../middleware/createjwt.js";
+import { decodeToken, generateRefreshToken, generateToken } from "../middleware/createjwt.js";
 import itemModel from "../models/itemModel.js";
 import productModel from "../models/productModel.js";
 import userModel from "../models/userModel.js";
@@ -8,11 +8,10 @@ dotenv.config();
 const userController = {
     register: async (req,res)=>{
         try{
-            const {name,email,password} = req.body;
+            const {email,password} = req.body;
             const salt = bcrypt.genSaltSync(10);
             const hashPassword = bcrypt.hashSync(password,salt)
             const user = await userModel.create({
-                name,
                 email,
                 password:hashPassword
             });
@@ -30,18 +29,20 @@ const userController = {
         try{
             const {email} = req.body;
             const user = await userModel.findOne({email});
-            const token = generateToken({user});
-            res.cookie('token',token, {
-                httpOnly: true,
-                secure: false,
-                sameSite: 'Lax',
-                maxAge: 24 * 60 * 60 * 1000
-            })
+            const accessToken = generateToken({user});
+            const refreshToken = generateRefreshToken({user})
+            // res.cookie('token',accesstokentoken, {
+            //     httpOnly: true,
+            //     secure: false,
+            //     sameSite: 'Lax',
+            //     maxAge: 24 * 60 * 60 * 1000
+            // })
             
             res.status(200).send({
                 message: 'login success',
                 user,
-                token:token
+                accessToken,
+                refreshToken
             })
         }catch(err){
             res.status(500).send({
@@ -66,12 +67,13 @@ const userController = {
     addWishList: async (req,res)=>{
         try {
             const {id,wishlist} = req.body
-            const token = req.cookies.token;
-            if (!token) {
-                return res.status(401).json({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            req.user = decoded.user;
+      
+            // const token = req.cookies.token;
+            // if (!token) {
+            //     return res.status(401).json({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            // req.user = decoded.user;
             const user = await userModel.findByIdAndUpdate(id,{
                 $addToSet: { wishlist: { $each: wishlist } }
             },
@@ -111,12 +113,12 @@ const userController = {
     addToCart: async (req,res) =>{
         try {
             const { id, productId, quantity, unitPrice } = req.body;
-            const token = req.cookies.token;
-            if (!token) {
-                return res.status(401).json({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            req.user = decoded.user;
+            // const token = req.cookies.token;
+            // if (!token) {
+            //     return res.status(401).json({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            // req.user = decoded.user;
 
             const user = await userModel.findById(id);
     

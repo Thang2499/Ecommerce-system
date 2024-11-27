@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 const userMiddleware = {
     checkRegister: async (req,res,next)=>{
         try{
-            const {name,email,password} = req.body;
-            if(!name || !email || !password) {
+            const {email,password} = req.body;
+            if( !email || !password) {
               return  res.send('điền đầy đủ thông tin đăng ký');
             } 
             const checkEmail = await userModel.findOne({email});

@@ -32,6 +32,10 @@ const shopSchema = new mongoose.Schema({
     address:{
         type:String
     },
+    isActive:{
+        type:Boolean,
+        default:false
+    },
     createAt:{
         Date:Date.now(),
         type:String
