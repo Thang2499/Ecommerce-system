@@ -6,10 +6,12 @@ const shopSchema = new mongoose.Schema({
         ref:'users',
         require:true
     },
-    orderId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'orders'
-    },
+    orderIds:[
+        {   
+                type:mongoose.Schema.Types.ObjectId,
+                ref:'orders'
+        }
+    ],
     name:{
         type:String,
         require:true
@@ -27,7 +29,8 @@ const shopSchema = new mongoose.Schema({
     },
     role:{
         type:String,
-        require:true
+        require:true,
+        default:'shop'
     },
     address:{
         type:String

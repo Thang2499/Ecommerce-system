@@ -1,29 +1,38 @@
-import { json } from "express";
-import { decodeToken } from "../middleware/createjwt.js";
 import productModel from "../models/productModel.js";
 import shopModel from "../models/shopModel.js";
 import userModel from "../models/userModel.js";
 import { v2 as cloudinary } from 'cloudinary';
-
+import crypto from 'crypto'
+import axios from "axios";
+import orderModel from "../models/orderModel.js";
+import dotenv from 'dotenv';
+dotenv.config();
 cloudinary.config({
     cloud_name: 'del1bdorn',
-    api_key: '648793695735266',
-    api_secret: 'xjK4i1bEVQIQV1TJ5a6nInR3RDs'
+    api_key: process.env.CLOUNDINARY,
+    api_secret: process.env.CLOUNDINARY_SECRET_API
 });
 const shopController = {
     register: async (req, res) => {
         try {
             const user = req.user;
-            const { name, phone } = req.body;
+            const { shopName, phoneNumber,description, address } = req.body;
             const registerShop = await shopModel.create({
                 userId: user._id,
-                name: name,
+                name: shopName,
                 email: user.email,
-                phone: phone,
+                phone: phoneNumber,
+                description:description,
+                address:address,
                 role: 'shop'
             })
             const creatIdShop = await shopModel.findOne({ email: user.email })
             const shopId = await userModel.findByIdAndUpdate(user._id, { shopId: creatIdShop._id })
+            if(registerShop.isActive === false){
+              return res.send({
+                    message:"Đang chờ duyệt"
+                })
+            }
             res.status(200).send({
                 message: 'create Shop success',
                 registerShop,
@@ -38,7 +47,6 @@ const shopController = {
     getShop: async (req, res) => {
         try {
             const users = req.user
-            // console.log(users)
             // const token = req.cookies.token;
 
             // if (!token) {
@@ -65,7 +73,6 @@ const shopController = {
             // const decoded = decodeToken(token);
             const users = req.user
             const getListProduct = await productModel.find({ shopId: users.shopId });
-            console.log(users)
             if (!getListProduct) {
                 return res.status(400).send({
                     message: 'hiện chưa có sản phẩm nào'
@@ -82,10 +89,9 @@ const shopController = {
     },
     addProduct: async (req, res) => {
         try {
-            const { productName, category, price } = req.body;
+            const { productName, category, price,Des } = req.body;
             const listFile = req.files;
-            const token = req.cookies.token;
-
+            // const token = req.cookies.token;
             if (!listFile || listFile.length === 0) {
                 return res.status(400).json({ error: 'Không có tệp nào được tải lên.' });
             }
@@ -118,17 +124,19 @@ const shopController = {
             //         }
             //     });
             // }
-            if (!token) {
-                return res.status(401).send({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            req.user = decoded.user;
+            // if (!token) {
+            //     return res.status(401).send({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            // req.user = decoded.user;
+            const user = req.user
             const addProduct = await productModel.create({
-                shopId: req.user.shopId,
+                shopId: user.shopId,
                 productName: productName,
                 category: category,
                 price: price,
-                imageDetail: listResult
+                image: listResult,
+                description:Des
             })
             return res.status(200).send({
                 message: 'add product success',
@@ -145,15 +153,15 @@ const shopController = {
         try {
             const { id } = req.query;
             const { productName, category, price, imageUrlsToDelete } = req.body;
-            const listFile = req.files['files']; 
-            const file = req.file['file']
-            console.log(req);
-            const token = req.cookies.token;
-            if (!token) {
-                return res.status(401).json({ message: 'Access denied, no token provided' });
-            }
-            const decoded = decodeToken(token);
-            req.user = decoded.user;
+            const listFile = req.files; 
+            // const file = req.file['file']
+
+            // const token = req.cookies.token;
+            // if (!token) {
+            //     return res.status(401).json({ message: 'Access denied, no token provided' });
+            // }
+            // const decoded = decodeToken(token);
+            //  req.user = decoded.user;
 
             const existingProduct = await productModel.findById(id);
             if (!existingProduct) {
@@ -165,16 +173,6 @@ const shopController = {
                 const publicId = publicIdWithExtension.split('.')[0];
                 return publicId;
             };
-            // let updatedImage = existingProduct.image;
-            // if (imageUrlsToDelete) {
-            //     const publicId = extractPublicIdFromUrl(JSON.parse(imageUrlsToDelete));
-            
-            //     // Xóa ảnh trên Cloudinary
-            //     await cloudinary.uploader.destroy(publicId);
-
-            //     updatedImage = ''; 
-            // }
-
             // if (!file || file.length === 0) {
             //     return res.status(400).json({ error: 'Không có tệp nào được tải lên.' });
             // }
@@ -194,7 +192,7 @@ const shopController = {
             //         throw new Error('Upload file thất bại'); 
             //     }
             // }
-
+            // let updatedImage = existingProduct.imageDetail;
             // if (imageUrlsToDelete) {
             //     const urlsToDelete = JSON.parse(imageUrlsToDelete);
 
@@ -210,23 +208,18 @@ const shopController = {
             // }
             let updatedImages = existingProduct.imageDetail;
             if (listFile && listFile.length > 0) {
-
                 const newImages = await Promise.all(
                     listFile.map(async (file) => {
                         const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
                         const fileName = file.originalname.split('.')[0];
-
                         const result = await cloudinary.uploader.upload(dataUrl, {
                             public_id: fileName,
                             resource_type: 'auto',
                         });
-
                         return result.secure_url;
                     })
                 );
-
                 updatedImages = [...updatedImages, ...newImages];
-
             }
             const updatedProduct = await productModel.findByIdAndUpdate(
                 id,
@@ -239,7 +232,6 @@ const shopController = {
                 },
                 { new: true } 
             );
-
             res.status(200).json({
                 message: 'Product updated successfully',
                 product: updatedProduct,
@@ -252,16 +244,128 @@ const shopController = {
     },
     deleteProduct: async (req, res) => {
         try {
-            const { id } = req.params;
-            const deleteProduct = await productModel.findByIdAndDelete(id);
+            const { productId } = req.body;
+            const user = req.user
+            const product = await productModel.findById(productId)
+            if(user.shopId._id.toString() !== product.shopId.toString()){
+                return res.status(400).send('Bạn không có quyền xóa sản phẩm này')
+            }
+            const deleteProduct = await productModel.findByIdAndDelete(productId);
+            if(!deleteProduct){
+                res.status(404).send('Product not found')
+            }
             res.status(200).send({
                 message: ' delete success',
-                deleteProduct
             })
         } catch (err) {
             res.status(400).send({
                 message: err.message
             })
+        }
+    },
+    manageOrder: async (req,res) => {
+        try {
+            const user = req.user;
+            const findShop = await orderModel.find({shopId:user.shopId}).populate({
+                path:'items.itemId',
+                model:'items',
+                populate: {
+                    path: 'productId',
+                    model: 'products',
+                    select: 'productName image'
+                  },
+            }).populate({
+                path:'userId',
+                model:'users',
+                select:'name phone'
+            });
+            res.send(findShop)
+        } catch (error) {
+            res.status(400).send({
+                message: error.message
+            })
+        }
+    },
+    updateOrder: async (req,res) =>{
+        try {
+            const {newStatus} = req.body;
+            const orderId = req.params;
+            const updateStatus = await orderModel.findByIdAndUpdate(orderId.orderId,{
+                status:newStatus
+            })
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+    },
+    paymentMethod: async (req, res) => {
+        const { amountPayment } = req.body; 
+        if (!amountPayment || isNaN(amountPayment)) {
+            return res.status(400).json({ message: 'Total is required and should be a number' });
+        }
+        var accessKey = 'F8BBA842ECF85';
+        var secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+        var orderInfo = 'pay with MoMo';
+        var partnerCode = 'MOMO';
+        var redirectUrl = 'http://localhost:5173/';
+        var ipnUrl = 'http://localhost:5173/';
+        var requestType = "payWithMethod";
+        var amount = Number(amountPayment);
+        var orderId = partnerCode + new Date().getTime();
+        var requestId = orderId;
+        var extraData = '';
+        var orderGroupId = '';
+        var autoCapture = true;
+        var lang = 'vi';
+        console.log("Raw Signature:", amount);
+        //before sign HMAC SHA256 with format
+        var rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl + "&requestId=" + requestId + "&requestType=" + requestType;
+        console.log("--------------------RAW SIGNATURE----------------")
+        console.log(rawSignature)
+      
+        var signature = crypto.createHmac('sha256', secretKey)
+            .update(rawSignature)
+            .digest('hex');
+        // console.log("--------------------SIGNATURE----------------")
+        // console.log(signature)
+    
+        //json object send to MoMo endpoint
+        const requestBody = {
+            partnerCode: partnerCode,
+            partnerName: "Test",
+            storeId: "MomoTestStore",
+            requestId: requestId,
+            amount: amount,
+            orderId: orderId,
+            orderInfo: orderInfo,
+            redirectUrl: redirectUrl,
+            ipnUrl: ipnUrl,
+            lang: lang,
+            requestType: requestType,
+            autoCapture: autoCapture,
+            extraData: extraData,
+            orderGroupId: orderGroupId,
+            signature: signature
+        };
+        const options = {
+            method: "POST",
+            url: "https://test-payment.momo.vn/v2/gateway/api/create",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            data: requestBody
+        };
+        
+        let result;
+        try {
+            result = await axios(options);
+            return res.json(result.data);
+        } catch (error) {
+            console.error("Error occurred: ", error);
+            return res.status(500).json({
+                statusCode: 500,
+                message: "Server lỗi",
+                error: error.response ? error.response.data : error.message
+            });
         }
     }
 }

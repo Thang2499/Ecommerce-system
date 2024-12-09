@@ -1,8 +1,8 @@
 const shopMiddleware = {
     checkRegisterShop: async (req,res,next)=> {
         try{
-            const {name,email,phone} = req.body;
-            if(!name || !phone){
+            const {shopName,email,phoneNumber,des} = req.body;
+            if(!shopName || !phoneNumber){
                 return res.status(400).send('điền đầy đủ thông tin đăng ký')
             }
             next();

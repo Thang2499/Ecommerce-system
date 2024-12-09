@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     origin: 'http://localhost:5173', // Địa chỉ frontend của bạn
-    credentials: true,                // Để cho phép gửi cookie
+    // credentials: true,                // Để cho phép gửi cookie
   }));
 
 await mongoose.connect(process.env.connect).then(()=>{

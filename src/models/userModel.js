@@ -45,12 +45,6 @@ const userSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'items'
           },
-          // quantity: {
-          //   type: Number,
-          //   default: 1
-          // },
-          // unitPrice: Number,
-          // totalPrice: Number
         }
       ],
 })

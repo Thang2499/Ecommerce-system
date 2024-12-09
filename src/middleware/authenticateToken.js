@@ -17,27 +17,28 @@ const authenticateToken = async (req, res, next) => {
 
         const authorizationData = req.headers['authorization']
         // Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzIwZjE2ZTk0NDQyYmVkYTZjZGU5MzIiLCJpYXQiOjE3MzA1NTY2OTMsImV4cCI6MTczMDU2MDI5M30.kjjgI3qomhvDimlBVN8LdUDDyFIjkmI59pS1EP_Iu0k
-        if (!authorizationData) throw {
-            status: 401,
-            message: "Unauthenticated"
+        if (!authorizationData) {
+           return res.status(401).send("Unauthenticated")
         }
         const accessToken = authorizationData.split(' ')[1]
-        // console.log('checck',accessToken)
-        if (!accessToken) throw {
-            status: 401,
-            message: "Unauthenticated"
-        }
+        if (!accessToken) {
+            return res.status(401).send("Unauthenticated")
+         }
         const userData = decodeToken(accessToken)
-        const user = await userModel.findById(userData.user._id)
-        if (!user) throw {
-            status: 401,
-            message: "Unauthenticated"
+        if(userData.status === 401){
+            return res.status(401).send('Unauthenticated')
         }
+        const user = await userModel.findById(userData.user._id).populate({
+            path: 'shopId',
+            model: 'shops'
+        });
+        if (!user){
+            return res.status(404).send("User not found")
+         }
         req.user = user
-
         next();
     } catch (err) {
-        return res.status(403).send({ message: 'Invalid token' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
